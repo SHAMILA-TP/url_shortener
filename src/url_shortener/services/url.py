@@ -8,6 +8,7 @@ from url_shortener.core.exceptions import (
     InvalidCustomCodeError,
     InvalidExpiryError,
     ShortCodeTakenError,
+    UrlNotFoundError,
 )
 from url_shortener.models.url import Url
 from url_shortener.repositories.url import UrlRepository
@@ -62,3 +63,11 @@ class UrlService:
             )
         if code.lower() in RESERVED_CODES:
             raise InvalidCustomCodeError(f"'{code}' is a reserved word")
+
+    async def resolve(self, code: str) -> str:
+        url = await self.repo.get_by_short_code(code)
+        if url is None or (
+            url.expires_at is not None and url.expires_at <= datetime.now(timezone.utc)
+        ):
+            raise UrlNotFoundError(f"No active link for '{code}'")
+        return url.original_url
