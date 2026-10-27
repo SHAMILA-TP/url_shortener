@@ -18,3 +18,7 @@ class InvalidExpiryError(AppError):
 
 class CodeGenerationError(AppError):
     pass
+
+
+class UrlNotFoundError(AppError):
+    pass
