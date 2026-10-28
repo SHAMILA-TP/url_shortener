@@ -1,5 +1,5 @@
 import re
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -31,7 +31,7 @@ class UrlService:
         custom_code: str | None,
         expires_at: datetime | None,
     ) -> Url:
-        if expires_at is not None and expires_at <= datetime.now(timezone.utc):
+        if expires_at is not None and expires_at <= datetime.now(UTC):
             raise InvalidExpiryError("expires_at must be in the future")
 
         if custom_code is not None:
@@ -67,7 +67,7 @@ class UrlService:
     async def resolve(self, code: str) -> str:
         url = await self.repo.get_by_short_code(code)
         if url is None or (
-            url.expires_at is not None and url.expires_at <= datetime.now(timezone.utc)
+            url.expires_at is not None and url.expires_at <= datetime.now(UTC)
         ):
             raise UrlNotFoundError(f"No active link for '{code}'")
         return url.original_url
