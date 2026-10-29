@@ -1,6 +1,7 @@
+from datetime import UTC, datetime
 from typing import Annotated
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
 from fastapi.responses import RedirectResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -13,7 +14,9 @@ router = APIRouter(tags=["redirect"])
 @router.get("/{code}")
 async def redirect_to_url(
     code: str,
+    request: Request,
     session: Annotated[AsyncSession, Depends(get_session)],
 ) -> RedirectResponse:
-    destination = await UrlService(session).resolve(code)
-    return RedirectResponse(url=destination, status_code=307)
+    url = await UrlService(session).resolve(code)
+    await request.app.state.redis.enqueue_job("record_click", url.id, datetime.now(UTC))
+    return RedirectResponse(url=url.original_url, status_code=307)
